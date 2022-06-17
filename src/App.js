@@ -1,28 +1,31 @@
-import React, { Fragment } from 'react';
-import { BrowserRouter as Router } from "react-router-dom";
-import { Switch, Route, Routes } from "react-router-dom";
-import Nav from './components/Navbar/Nav';
+
+import { Fragment } from 'react';
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import styled from 'styled-components';
 import './App.css';
-import Sidebar from './components/Sidebar/Sidebar';
 import Home from './components/Homepage/Home';
+import Nav from './components/Navbar/Nav';
+import Sidebar from './components/Sidebar/Sidebar';
+import AuthContextProvider from "./Hooks/AuthContextProvider";
 
 function App() {
 
   return (
-    <Router>
-      <Fragment>
-        <Nav />
-        <Body>
-          <OnBody>
-            <Sidebar />
-            <Routes>
-              <Route exact path="/" element={<Home />} />
-            </Routes>
-          </OnBody>
-        </Body>
-      </Fragment>
-    </Router>
+    <AuthContextProvider>
+      <Router>
+        <Fragment>
+          <Nav />
+          <Body>
+            <OnBody>
+              <Sidebar />
+              <Routes>
+                <Route exact path="/" element={<Home />} />
+              </Routes>
+            </OnBody>
+          </Body>
+        </Fragment>
+      </Router>
+    </AuthContextProvider>
   );
 }
 

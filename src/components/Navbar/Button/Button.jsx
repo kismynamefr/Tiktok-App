@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 import styled from "styled-components";
 import Plus from "../../assets/images/plus";
 
-const Button = ({ typeButton }) => {
+const Button = ({ typeButton, handleOpenModal }) => {
+
   const checkButton = () => {
     switch (typeButton) {
       case "outline":
@@ -15,9 +16,9 @@ const Button = ({ typeButton }) => {
           </Outline>
         );
       case "primary":
-        return <Primary>Login</Primary>;
+        return <Primary onClick={handleOpenModal}>Login</Primary>;
       case "outline large":
-        return <OutlineLarge>Login</OutlineLarge>;
+        return <OutlineLarge onClick={handleOpenModal}>Login</OutlineLarge>;
       case "outline small":
         return <OutLineSmall>Follow</OutLineSmall>;
       default:

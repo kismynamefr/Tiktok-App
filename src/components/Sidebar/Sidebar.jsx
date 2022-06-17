@@ -1,11 +1,22 @@
-import React from "react";
+import { memo, useState, useContext } from "react";
 import styled from "styled-components";
+import Signin from "../Auth/Signin";
 import Button from "../Navbar/Button/Button";
 import SuggestedAccounts from "./Suggested/SuggestedAccounts";
+import { AuthContext } from "../../Hooks/AuthContextProvider";
+import Authentication from "../Auth/Authentication";
 
 const Sidebar = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const { usersHasSignin } = useContext(AuthContext);
+
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
   return (
     <Container>
+      {openModal ? <Authentication setOpenModal={setOpenModal} /> : null}
       <Body>
         <NavContainer>
           <ButtonNav>
@@ -74,15 +85,17 @@ const Sidebar = () => {
             </NavForYou>
           </ButtonNav>
         </NavContainer>
-        <FrameContainer>
-          <p>Log in to follow creators, like videos, and view comments.</p>
-          <Button typeButton="outline large" />
-        </FrameContainer>
+        {usersHasSignin ? null : (
+          <FrameContainer>
+            <p>Log in to follow creators, like videos, and view comments.</p>
+            <Button
+              typeButton="outline large"
+              handleOpenModal={handleOpenModal}
+            />
+          </FrameContainer>
+        )}
         <SuggestedAccounts />
       </Body>
-      {/* <ScrollBar>
-        <ScrollBarThumb className="scrollBarThumb"/>
-      </ScrollBar> */}
     </Container>
   );
 };
@@ -100,17 +113,6 @@ const Body = styled.div`
   min-height: 100%;
   padding-left: 8px;
 `;
-// const ScrollBar = styled.div`
-//   height: 1148.57px;
-//   transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1)
-//     scale(1.03694) translateZ(-0.0369437px) translateZ(-2px);
-// `;
-// const ScrollBarThumb = styled.div`
-//   width: 6px;
-//   height: 100%;
-//   border-radius: 3px;
-//   background: rgba(22, 24, 35, 0.06);
-// `;
 const NavContainer = styled.div`
   margin-bottom: 8px;
   padding: 0;
@@ -159,4 +161,4 @@ const FrameContainer = styled.div`
   }
 `;
 
-export default Sidebar;
+export default memo(Sidebar);

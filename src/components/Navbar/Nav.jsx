@@ -1,19 +1,32 @@
-import React from "react";
+import { memo, useContext, useState } from "react";
 import styled from "styled-components";
 import Tiktoklogo from "../assets/images/tiktoklogo";
-import SearchNav from "./Search/searchNav";
+import Signin from "../Auth/Signin";
 import Button from "./Button/Button";
 import SeeMorebtn from "./Button/SeeMorebtn";
+import SearchNav from "./Search/searchNav";
+import {AuthContext} from "../../Hooks/AuthContextProvider";
+import Authentication from "../Auth/Authentication";
 
 const Nav = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const { usersHasSignin } = useContext(AuthContext);
+
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
   return (
     <Container>
       <Body>
+        {openModal ? <Authentication setOpenModal={setOpenModal} /> : null}
         <Tiktoklogo typeLogo={"PC"} />
         <SearchNav />
         <ButtonPlace>
           <Button typeButton={"outline"} />
-          <Button typeButton={"primary"} />
+          {usersHasSignin ? null : (
+            <Button typeButton={"primary"} handleOpenModal={handleOpenModal} />
+          )}
           <SeeMorebtn />
         </ButtonPlace>
       </Body>
@@ -49,4 +62,4 @@ const ButtonPlace = styled.div`
   align-items: center;
   position: relative;
 `;
-export default Nav;
+export default memo(Nav);
