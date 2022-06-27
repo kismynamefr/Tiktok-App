@@ -34,7 +34,7 @@ const Authentication = ({ setOpenModal }) => {
               </ButtonClose>
               <HeaderLogin>
                 <TiktokWebBody>
-                  {isSignUp ? <Signup handleSignUp={handleSignUp}/> : <Signin handleSignUp={handleSignUp}/>}
+                  {isSignUp ? <Signup handleSignUp={handleSignUp}/> : <Signin handleSignUp={handleSignUp} setOpenModal={setOpenModal}/>}
                 </TiktokWebBody>
               </HeaderLogin>
             </BodyLogin>

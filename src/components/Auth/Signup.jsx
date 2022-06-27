@@ -1,77 +1,401 @@
-import React from "react";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
+import auth from "../../firebase-config";
+import Loading from "../assets/loading/Loading";
 import {
-  LoginContainers,
-  LoginTitleContainer,
-  LoginTitle,
-  SocialContainer,
-  ChannelItemWrapper,
-  ChannelIconWrapper,
+  Days,
+  FbIcon,
+  GgIcon,
+  InsIcon,
+  Months,
+  tick,
+  userIcon,
+  Years,
+} from "./Constant";
+import "./digitCode.css";
+import Username from "./Register/Username";
+import {
   ChannelIcon,
+  ChannelIconWrapper,
+  ChannelItemWrapper,
   ChannelName,
   FooterContainer,
+  LoginContainers,
+  LoginTitle,
+  LoginTitleContainer,
+  SignUp,
+  SocialContainer,
   Toggle,
   ToLogin,
-  SignUp,
 } from "./Signin";
 
-const Signup = ({ handleSignUp }) => {;
-  const userIcon =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAANlBMVEVHcEwAAAAJChIMDBkWGCIOEBcOEBcJCg8QEhwNDxQUFiAAAAAAAAAVFyMDBAYQEhsWGCMAAAD5xs1FAAAAEHRSTlMA7zAQ33+jXkIgxt/B72+Q9PCfEQAAASBJREFUSMftVMsSgyAM5CUEENT//9k2aEesQNLeOtM9EciSLCwI8cd30GDNugbrmPnwzN5hWJRprTB9mM9guD0NhFC2DIEgYP9G7WNfAkYB/4oUXQLbsGe4XMMGwnVLIHvCHuorfItJgiAJpta8q06khul6aGFIyLilfkXlIsZ+0gn3PBga6yXPsJKB07WkmUJxUAohlUGgX4+pzRo8470tZ/6iWU/O29JOssB/1grA//K35LONctvkHDJHB8xbhZn6mdQlHRGHVbLc7sgD5x19ZKXxh81HuWmcP0N95yOGwzX5ptKVJpvSfcR8dTsGZMiWCUt11Tg4nG/8Zr7bbG7vhAViWxwe1nKbjT1tz8tHFbdZ2S3QWXNRdn0zWvtFPAAmbxZPKTUEzQAAAABJRU5ErkJggg==";
-  const FbIcon =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsBAMAAADsqkcyAAAALVBMVEVHcEwYdfEYdvIXd/IYd+8Xd+8Xd/IXd/IQcO8Yd/IXd/EXd/IYdvMXdvIYd/JU6UsnAAAADnRSTlMAgKDGQCFa7xDfkK9/bxPrucEAAAFTSURBVCjPbdM/S8NAFADwh9Ua/Idx6lSKOEuhg+IQMjtIKWRxKNncOokIQhCcXKSfIIsgTqGrS/ETCH4Da/+EtHKfwbvkvcu75t5ydz+Ou5d3eQBFOJcfUdp5ewQjNs9EHqvQUE9gZMy3tMr9Xc03gsUd6Z4w4hP5y+Q/62baPtDrh+NOLIdFnkZMeqJSlWOqktkgvQVk0eZnhJpnckJn/ILmKY4q5iULvzx6qPD7KJ+3YJt4JPkU5/dwRdwCqNN8Bk2aHrLvXYLHWN+zsnMGkY1TEDYWyPMgkI/uBMG1wT/0UrvIsck1vHJs8oEoapWY3MfPGZhc1GIBL/k4cV1f1sR1x1jkmi3vNuzbOAQnqnImL2lWWf0oz1UeQvnGjH2VarLOE1YGxqOimzyTp9hXTyafUyESzkvdO/W45JS1Wq/kd96YvbjgtLHWxq+Sdy58XP4DJ30Z99MJep4AAAAASUVORK5CYII=";
-  const GgIcon =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAjVBMVEVHcEwwnU/VPjYvnk/VPjUvnVDWSDRQcKehaUFQcKhOc6Iunk7VPTXVPjVQcKdQcKjZWDMvnU7VPTXvtikwnVDWPTXvtSnurSpQcKfVPjYunk7ttChQcajstSgwn0zttCjvtShQcKlQcKgvnk/VPjbvtSnjfi7bsy07n009inXYTTSDqD6bqzqnrTdTokc44COHAAAAInRSTlMAPc/b5r4jPxC/oJBVkIjlQGOjtyC/0/cggIB7X2BQoJ/Psru6sQAAAUhJREFUSMftlduWgiAUhjGBoRTT0uw4B8Gp5vT+jzeGOggCC5vb/iuX6/vYe6MoAI/cFRLTGeScw4LGHnha8EHgCk/BRZwK5YZAa2Ok4OZYDDKz8DNiFqbyu0HXNMY4jVfQxWOJp3IRaOUB/NvGIYGpjT+9d/zO831Y1+WHWN+Tx3WTpgjEnsKpbg0KvDsSKWWB7ZMeRdi0wkbeWVRa3hShbIW1Q1gqQsvXB4dQ/U/oWnr1FjyGVmd4aYWzfHOSeZ9lK8wV4SD4r8ve8Iw6IVFP2235T8ZYPuKPXUtH/VGffxqeIVuBaqt9X74vTERvKqlMIzRBrEtETLzeEQBBL7AwkzeReVNFIiaV6DnIgywKm+urcQK1KTXX8Z72WxuaDWbhG8NSgy2sB29v5DPHUc3HRVDgPt0BmoSLKlmEbvOHYZSRxx/8rvwCaQpYY51gRIUAAAAASUVORK5CYII=";
-  const InsIcon =
-    "data:image/png;base64,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";
+const Signup = ({ handleSignUp }) => {
+  const [signUpPhone, setSignUpPhone] = useState(false);
+  const [listMonths, setListMonths] = useState(false);
+  const [listDays, setListDays] = useState(false);
+  const [listYears, setListYears] = useState(false);
+  const [selectMonths, setSelectMonths] = useState();
+  const [selectDays, setSelectDays] = useState();
+  const [selectYears, setSelectYears] = useState();
+  const [digitCode, setDigitCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState();
+  const [isLoading, setIsLoading] = useState(false);
+  const [countDown, setCountDown] = useState();
+  const [beginCountDown, setBeginCountDown] = useState(false);
+  const [nextPage, setNextPage] = useState(false);
+
+  const signUpWithPhoneOrEmail = () => {
+    return setSignUpPhone(true);
+  };
+
+  const fetchListContainer = (type) => {
+    switch (type) {
+      case "Months":
+        return !listMonths ? setListMonths(true) : setListMonths(false);
+      case "Days":
+        return !listDays ? setListDays(true) : setListDays(false);
+      case "Years":
+        return !listYears ? setListYears(true) : setListYears(false);
+      default:
+        break;
+    }
+  };
+  const fetchListMonths = () => {
+    return (
+      <SelectorContainer onClick={() => fetchListContainer("Months")}>
+        <SelectContainer
+          col={selectMonths ? "black" : "rgba(18, 18, 18, 0.34)"}
+        >
+          {!selectMonths
+            ? "Months"
+            : Months.filter((res, index) =>
+                selectMonths === index + 1 ? res : null
+              )}
+        </SelectContainer>
+        {listMonths ? (
+          <ListContainer onClick={handleChooseMonths}>
+            {Months.map((res, index) => (
+              <ListItem value={index + 1} key={index}>
+                {res}
+                {selectMonths === index + 1 ? (
+                  <TickContainer src={tick} />
+                ) : null}
+              </ListItem>
+            ))}
+          </ListContainer>
+        ) : null}
+      </SelectorContainer>
+    );
+  };
+  const fetchListDays = () => {
+    return (
+      <SelectorContainer onClick={() => fetchListContainer("Days")}>
+        <SelectContainer col={selectDays ? "black" : "rgba(18, 18, 18, 0.34)"}>
+          {!selectDays
+            ? "Days"
+            : Days.filter((res, index) =>
+                selectDays === index + 1 ? res : null
+              )}
+        </SelectContainer>
+        {listDays ? (
+          <ListContainer onClick={handleChooseDays}>
+            {Days.map((res, index) => (
+              <ListItem value={index + 1} key={index}>
+                {res}
+                {selectDays === index + 1 ? <TickContainer src={tick} /> : null}
+              </ListItem>
+            ))}
+          </ListContainer>
+        ) : null}
+      </SelectorContainer>
+    );
+  };
+  const fetchListYears = () => {
+    return (
+      <SelectorContainer onClick={() => fetchListContainer("Years")}>
+        <SelectContainer col={selectYears ? "black" : "rgba(18, 18, 18, 0.34)"}>
+          {!selectYears
+            ? "Years"
+            : Years.filter((res, index) =>
+                selectYears === index + 1 ? res : null
+              )}
+        </SelectContainer>
+        {listYears ? (
+          <ListContainer onClick={handleChooseYears}>
+            {Years.map((res, index) => (
+              <ListItem value={index + 1} key={index}>
+                {res}
+                {selectYears === index + 1 ? (
+                  <TickContainer src={tick} />
+                ) : null}
+              </ListItem>
+            ))}
+          </ListContainer>
+        ) : null}
+      </SelectorContainer>
+    );
+  };
+
+  const handleChooseMonths = (e) => {
+    setSelectMonths(e.target.value);
+  };
+  const handleChooseDays = (e) => {
+    setSelectDays(e.target.value);
+  };
+  const handleChooseYears = (e) => {
+    setSelectYears(e.target.value);
+  };
+  const generateRecaptcha = () => {
+    setIsLoading(true);
+    auth.languageCode = "it";
+    auth.useDeviceLanguage();
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      "recapcha",
+      {
+        size: "invisible",
+        callback: (response) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        },
+      },
+      auth
+    );
+  };
+  const requestOTP = () => {
+    setBeginCountDown(true);
+    generateRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
+    signInWithPhoneNumber(auth, `+84${phoneNumber}`, appVerifier)
+      .then((confirmationResult) => {
+        // SMS sent. Prompt user to type the code from the message, then sign the
+        // user in with confirmationResult.confirm(code).
+        window.confirmationResult = confirmationResult;
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        // Error; SMS not sent
+        // console.log(error);
+        // ...
+      });
+  };
+  const clearRecaptcha = () => {
+    window.recaptchaVerifier.recaptcha.reset();
+  };
+
+  const handleConfirmCode = () => {
+    let confirmationResult = window.confirmationResult;
+    confirmationResult
+      .confirm(digitCode)
+      .then((result) => {
+        // User signed in successfully.
+        const user = result.user;
+        console.log(user);
+    setNextPage(true);
+        // ...
+      })
+      .catch((error) => {
+        // User couldn't sign in (bad verification code?)
+        // ...
+      });
+  };
+
+  const handleDigitCode = (e) => {
+    setDigitCode(e.target.value);
+  };
+  const handlePhoneNumber = (e) => {
+    setPhoneNumber(e.target.value);
+  };
+
+  useEffect(() => {
+    if (beginCountDown) {
+      let i = 60;
+      const interval = setInterval(() => {
+        --i;
+        setCountDown(i);
+        if (i < 1) {
+          clearInterval(interval);
+          setBeginCountDown(false);
+          setCountDown(60);
+          clearRecaptcha();
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [beginCountDown]);
 
   return (
     <LoginContainers>
-      <LoginTitleContainer>
-        <LoginTitle>Đăng Ký vào TikTok</LoginTitle>
-        <SocialContainer>
-          <ChannelItemWrapper>
-            <ChannelIconWrapper>
-              <ChannelIcon urlBg={userIcon} />
-            </ChannelIconWrapper>
-            <ChannelName>Sử dụng số điện thoại hoặc email</ChannelName>
-          </ChannelItemWrapper>
-          <ChannelItemWrapper>
-            <ChannelIconWrapper>
-              <ChannelIcon urlBg={FbIcon} />
-            </ChannelIconWrapper>
-            <ChannelName>Tiếp tục với Facebook</ChannelName>
-          </ChannelItemWrapper>
-          <ChannelItemWrapper>
-            <ChannelIconWrapper>
-              <ChannelIcon urlBg={GgIcon} />
-            </ChannelIconWrapper>
-            <ChannelName>Tiếp tục với Google</ChannelName>
-          </ChannelItemWrapper>
-          <ChannelItemWrapper>
-            <ChannelIconWrapper>
-              <ChannelIcon urlBg={InsIcon} />
-            </ChannelIconWrapper>
-            <ChannelName>Tiếp tục với Instagram</ChannelName>
-          </ChannelItemWrapper>
-        </SocialContainer>
-        <FooterContainer>
-          <FooterSignUp>
-            <SubTitle>
-              Bằng cách tiếp tục, bạn đồng ý với
-              <a href=""> Điều khoản Sử dụng </a>
-              của TikTok và xác nhận rằng bạn đã đọc hiểu
-              <a href=""> Chính sách Quyền riêng tư </a> của TikTok.
-            </SubTitle>
-          </FooterSignUp>
-          <Toggle>
-            <ToLogin>
-              Bạn đã có tài khoản?
-              <SignUp onClick={handleSignUp}>Đăng Nhập</SignUp>
-            </ToLogin>
-          </Toggle>
-        </FooterContainer>
-      </LoginTitleContainer>
+      {signUpPhone ? (
+        !nextPage ? (
+          <Username handleSignUp={handleSignUp} />
+        ) : (
+          <>
+            <LoginTitleContainer>
+              <BackIcon onClick={() => setSignUpPhone(false)} />
+              <LoginTitle>Sign Up</LoginTitle>
+              <form action="">
+                <TittleWrapper>
+                  <div>When’s your birthday?</div>
+                </TittleWrapper>
+                <DateSelector>
+                  {fetchListMonths()}
+                  {fetchListDays()}
+                  {fetchListYears()}
+                </DateSelector>
+                <SubTitleSignUp>
+                  Your birthday won't be shown publicly.
+                </SubTitleSignUp>
+                <PaddingBottom>
+                  <TitleWrapperBottom>
+                    <div>Phone</div>
+                    <SignUpWithEmail>Sign up with email</SignUpWithEmail>
+                  </TitleWrapperBottom>
+                  <InputField>
+                    <SelectorContainer className="PhoneNumber">
+                      <SelectContainer>VN +84</SelectContainer>
+                    </SelectorContainer>
+                    <SeparatorWrapper>
+                      <p></p>
+                    </SeparatorWrapper>
+                    <InputPhoneNumber
+                      placeholder="Phone number"
+                      type="text"
+                      name="phone"
+                      maxLength={9}
+                      onChange={handlePhoneNumber}
+                    ></InputPhoneNumber>
+                  </InputField>
+                  <DigitCodeContainer>
+                    <InputField
+                      style={{
+                        borderRadius: "4px 0px 0px 4px",
+                        borderRight: "none",
+                      }}
+                    >
+                      <InputPhoneNumber
+                        placeholder="Enter 6-digit code"
+                        type="text"
+                        name="code"
+                        maxLength={6}
+                        id="digitCode"
+                        onChange={handleDigitCode}
+                      />
+                    </InputField>
+                    {isLoading ? (
+                      <ButtonLoading>
+                        <Loading />
+                      </ButtonLoading>
+                    ) : beginCountDown ? (
+                      <ButtonCountDown>
+                        {countDown && countDown}
+                      </ButtonCountDown>
+                    ) : (
+                      <ButtonSendCode
+                        onClick={
+                          phoneNumber && phoneNumber.length === 9
+                            ? requestOTP
+                            : null
+                        }
+                        style={
+                          phoneNumber && phoneNumber.length === 9
+                            ? {
+                                cursor: "pointer",
+                                color: "white",
+                                backgroundColor: "rgba(254,44,85,1)",
+                              }
+                            : null
+                        }
+                      >
+                        Sent Code
+                      </ButtonSendCode>
+                    )}
+                  </DigitCodeContainer>
+                  <ButtonNext
+                    style={
+                      phoneNumber &&
+                      phoneNumber.length === 9 &&
+                      digitCode &&
+                      digitCode.length === 6
+                        ? {
+                            color: "#ffff",
+                            backgroundColor: "#fe2c55",
+                            cursor: "pointer",
+                          }
+                        : null
+                    }
+                    onClick={handleConfirmCode}
+                  >
+                    Next
+                  </ButtonNext>
+                </PaddingBottom>
+              </form>
+              <FooterContainer>
+                <FooterSignUp>
+                  <SubTitle>
+                    Bằng cách tiếp tục, bạn đồng ý với
+                    <a href="#"> Điều khoản Sử dụng </a>
+                    của TikTok và xác nhận rằng bạn đã đọc hiểu
+                    <a href=""> Chính sách Quyền riêng tư </a> của TikTok.
+                  </SubTitle>
+                </FooterSignUp>
+                <Toggle>
+                  <ToLogin>
+                    Bạn đã có tài khoản?
+                    <SignUp onClick={handleSignUp}>Đăng Nhập</SignUp>
+                  </ToLogin>
+                </Toggle>
+              </FooterContainer>
+            </LoginTitleContainer>
+            <Recaptcha id="recapcha" />
+          </>
+        )
+      ) : (
+        <LoginTitleContainer>
+          <LoginTitle>Đăng Ký vào TikTok</LoginTitle>
+          <SocialContainer>
+            <ChannelItemWrapper onClick={signUpWithPhoneOrEmail}>
+              <ChannelIconWrapper>
+                <ChannelIcon urlBg={userIcon} />
+              </ChannelIconWrapper>
+              <ChannelName>Sử dụng số điện thoại hoặc email</ChannelName>
+            </ChannelItemWrapper>
+            <ChannelItemWrapper>
+              <ChannelIconWrapper>
+                <ChannelIcon urlBg={FbIcon} />
+              </ChannelIconWrapper>
+              <ChannelName>Tiếp tục với Facebook</ChannelName>
+            </ChannelItemWrapper>
+            <ChannelItemWrapper>
+              <ChannelIconWrapper>
+                <ChannelIcon urlBg={GgIcon} />
+              </ChannelIconWrapper>
+              <ChannelName>Tiếp tục với Google</ChannelName>
+            </ChannelItemWrapper>
+            <ChannelItemWrapper>
+              <ChannelIconWrapper>
+                <ChannelIcon urlBg={InsIcon} />
+              </ChannelIconWrapper>
+              <ChannelName>Tiếp tục với Instagram</ChannelName>
+            </ChannelItemWrapper>
+          </SocialContainer>
+          <FooterContainer>
+            <FooterSignUp>
+              <SubTitle>
+                Bằng cách tiếp tục, bạn đồng ý với
+                <a href=""> Điều khoản Sử dụng </a>
+                của TikTok và xác nhận rằng bạn đã đọc hiểu
+                <a href=""> Chính sách Quyền riêng tư </a> của TikTok.
+              </SubTitle>
+            </FooterSignUp>
+            <Toggle>
+              <ToLogin>
+                Bạn đã có tài khoản?
+                <SignUp onClick={handleSignUp}>Đăng Nhập</SignUp>
+              </ToLogin>
+            </Toggle>
+          </FooterContainer>
+        </LoginTitleContainer>
+      )}
     </LoginContainers>
   );
 };
@@ -92,5 +416,244 @@ const SubTitle = styled.div`
     font-weight: 700;
   }
 `;
+const BackIcon = styled.div`
+  cursor: pointer;
+  position: absolute;
+  left: 16px;
+  top: 24px;
+  width: 24px;
+  height: 24px;
+  background-image: url(https://lf16-tiktok-web.ttwstatic.com/obj/tiktok-web/tiktok/webapp_login/svgs/back_modal.bbfe2402.svg);
+`;
+export const TittleWrapper = styled.div`
+  font-size: 16px;
+  line-height: 22px;
+  color: #161823;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+const DateSelector = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+`;
+const SubTitleSignUp = styled.div`
+  font-size: 12px;
+  line-height: 15px;
+  color: rgba(22, 24, 35, 0.5);
+  margin-top: 4px;
+`;
+const SelectorContainer = styled.div`
+  width: 120px;
+  position: relative;
+  color: #161823;
+  background: rgba(22, 24, 35, 0.06);
+  border-radius: 4px;
+  &:hover {
+    background: rgba(22, 24, 35, 0.1);
+  }
+`;
+const SelectContainer = styled.div`
+  font-size: 16px;
+  color: ${(props) => props.col};
+  box-sizing: border-box;
+  height: 44px;
+  line-height: 44px;
+  padding: 0 13px 0 12px;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  white-space: pre;
+  border-radius: 2px;
+  &:after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    margin: 12px 0;
+    display: block;
+    background-image: url(https://lf16-tiktok-web.ttwstatic.com/obj/tiktok-web/tiktok/webapp_login/svgs/openSelector.3e786e4d.svg);
+    background-size: contain;
+  }
+`;
+const PaddingBottom = styled.div`
+  padding-bottom: 40px;
+`;
+const TitleWrapperBottom = styled.div`
+  margin-bottom: -4px;
+  font-size: 16px;
+  line-height: 22px;
+  color: #161823;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+const SignUpWithEmail = styled.a`
+  margin: 0;
+  display: inline-block;
+  font-size: 14px;
+  line-height: 17px;
+  color: #161823;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+export const InputField = styled.div`
+  border-radius: 4px;
+  position: relative;
+  margin-top: 8px;
+  background: rgba(22, 24, 35, 0.06);
+  border: 1px solid rgba(22, 24, 35, 0.06);
+  display: flex;
+  justify-content: space-between;
+  height: 44px;
+  line-height: 44px;
+  margin-top: 12px;
+  box-sizing: content-box;
+  .PhoneNumber {
+    background: none;
+    &:hover {
+      background: rgba(22, 24, 35, 0.1);
+    }
+  }
+`;
+const SeparatorWrapper = styled.div`
+  height: 100%;
+  width: 1px;
+  display: flex;
+  align-items: center;
+  p {
+    width: 1px;
+    height: 30px;
+    background: rgba(22, 24, 35, 0.12);
+  }
+`;
+const InputPhoneNumber = styled.input`
+  padding-left: 12px !important;
+  background: transparent;
+  outline: none;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  border: none;
+  direction: ltr;
+  color: #161823;
+  font-size: 16px;
+  caret-color: #fe2c55;
+  border-radius: 0px 4px 4px 0px;
+`;
+const DigitCodeContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+const ButtonSendCode = styled.div`
+  margin-top: 12px;
+  width: 140px;
+  cursor: not-allowed;
+  color: rgba(22, 24, 35, 0.34);
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+  background: #fff;
+  border-radius: 0 4px 4px 0;
+  border: 1px solid rgba(22, 24, 35, 0.12);
+  white-space: nowrap;
+  height: 46px;
+`;
+const ButtonCountDown = styled.div`
+  margin-top: 12px;
+  width: 140px;
+  cursor: not-allowed;
+  color: rgba(22, 24, 35, 0.34);
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+  background: #fff;
+  border-radius: 0 4px 4px 0;
+  border: 1px solid rgba(22, 24, 35, 0.12);
+  white-space: nowrap;
+  height: 46px;
+`;
+const ButtonLoading = styled.div`
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(254, 44, 85, 1);
+  cursor: pointer;
+  border: none;
+  width: 44%;
+  height: 46px;
+  line-height: 44px;
+  text-align: center;
+  border-radius: 2px;
+  font-size: 16px;
+  line-height: 44px;
+  font-weight: 600;
+  margin-top: 11px;
+`;
 
+const ButtonNext = styled.div`
+  color: rgba(22, 24, 35, 0.3);
+  background-color: rgba(22, 24, 35, 0.06);
+  cursor: not-allowed;
+  border: none;
+  width: 100%;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  border-radius: 2px;
+  font-size: 16px;
+  line-height: 44px;
+  font-weight: 600;
+  margin-top: 16px;
+`;
+const ListContainer = styled.ul`
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  box-shadow: 0 0 6px 0 rgb(0 0 0 / 3%), 0 2px 4px 0 rgb(0 0 0 / 3%);
+  max-height: 286px;
+  min-width: 100px;
+  overflow: scroll;
+  margin-top: 4px;
+  -webkit-overflow-scrolling: touch;
+  z-index: 11;
+`;
+const ListItem = styled.li`
+  display: flex;
+  padding: 0 12px;
+  height: 34px;
+  line-height: 34px;
+  color: #161823;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 13px;
+  &:hover {
+    background: rgba(22, 24, 35, 0.1);
+  }
+`;
+const TickContainer = styled.img`
+  margin: 0 12px;
+  width: 16px;
+`;
+const Recaptcha = styled.div`
+  position: absolute;
+`;
 export default Signup;

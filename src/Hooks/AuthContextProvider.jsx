@@ -6,14 +6,15 @@ export const AuthContext = createContext();
 
 const AuthContextProvider = ({ children }) => {
   const [usersHasSignin, setUsersHasSignin] = useState(false);
+  const [serialId, setSerialId] = useState();
 
   const checkUser = () => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         const uid = user.uid;
+        setSerialId(uid);
         console.log("uid: ", uid);
         setUsersHasSignin(true);
-        console.log("user has signin");
       } else {
         setUsersHasSignin(false);
         console.log("user not signin");
@@ -27,7 +28,7 @@ const AuthContextProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usersHasSignin, setUsersHasSignin }}>
+    <AuthContext.Provider value={{ usersHasSignin, serialId }}>
       {children}
     </AuthContext.Provider>
   );

@@ -26,11 +26,14 @@ const SuggestedAccounts = () => {
       <p>Suggested accounts</p>
       {dataUser.map((res, index) => {
         return (
-          <UserLinkContainer key={index} dis={seeAll ? "flex" : (index > 4 ? "none" : "flex")}>
+          <UserLinkContainer
+            key={index}
+            dis={seeAll ? "flex" : index > 4 ? "none" : "flex"}
+          >
             <UserAvatar href="">
               <div>
                 <span>
-                  <img src={res.avatar} alt="" />
+                  <AvatarContainer urls={res.photoURL} alt="" />
                 </span>
               </div>
             </UserAvatar>
@@ -105,13 +108,14 @@ const UserAvatar = styled.div`
       border-color: rgba(22, 24, 35, 0.12);
       border-width: 0.5px;
       cursor: pointer;
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
     }
   }
+`;
+const AvatarContainer = styled.div`
+  object-fit: cover;
+  background-image: url(${props => props.urls});
+  background-size: cover;
+  background-repeat: no-repeat;
 `;
 const UserLinkContainer = styled.div`
   padding: 8px;
